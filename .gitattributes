@@ -1,0 +1,6 @@
+#
+# https://help.github.com/articles/dealing-with-line-endings/
+#
+# Binary files should be left untouched
+*.jar           binary
+
