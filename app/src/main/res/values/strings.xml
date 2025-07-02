@@ -2,4 +2,10 @@
 <resources>
     <string name="app_name">VideoPlayerApp</string>
     <string name="pick_video">Pick Video</string>
+    <string-array name="playback_speed_labels">
+        <item>0.5x</item>
+        <item>1x</item>
+        <item>1.5x</item>
+        <item>2x</item>
+    </string-array>
 </resources>

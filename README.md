@@ -18,6 +18,7 @@ required JAR so the build can be reproduced without a pre-installed Gradle
 version. You can also build directly with your system Gradle via
 `gradle assembleDebug`.
 
-The app streams a sample video from the web by default. You can also tap the
-"Pick Video" button to choose a local video using Android's media picker.
-Edit `MainActivity` if you want to supply your own default URL.
+The app streams a sample video from the web by default. You can tap the "Pick
+Video" button to choose a local file using Android's media picker. The player
+shows a progress bar and lets you change playback speed using the spinner below
+the video. Edit `MainActivity` if you want to supply your own default URL.
