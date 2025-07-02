@@ -1,13 +1,18 @@
 package com.example.videoplayer;
 
+import android.app.PictureInPictureParams;
+import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Rational;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 
@@ -25,6 +30,13 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> pickVideoLauncher;
     private Handler progressHandler;
     private Runnable progressRunnable;
+    private Uri[] playlist = new Uri[] {
+            Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
+            Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"),
+            Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4")
+    };
+    private int playlistIndex = 0;
+    private boolean isFullScreen = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,8 +44,12 @@ public class MainActivity extends AppCompatActivity {
 
         PlayerView playerView = findViewById(R.id.player_view);
         SeekBar progressBar = findViewById(R.id.progress_bar);
+        SeekBar volumeBar = findViewById(R.id.volume_bar);
         Spinner speedSpinner = findViewById(R.id.speed_spinner);
         Button pickButton = findViewById(R.id.pick_button);
+        Button nextButton = findViewById(R.id.next_button);
+        Button prevButton = findViewById(R.id.prev_button);
+        Button fullscreenButton = findViewById(R.id.fullscreen_button);
 
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
@@ -94,22 +110,86 @@ public class MainActivity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
+                        playlistIndex = playlist.length; // append to end
+                        playlist = java.util.Arrays.copyOf(playlist, playlist.length + 1);
+                        playlist[playlistIndex] = uri;
                         playVideo(uri);
                     }
                 });
 
         pickButton.setOnClickListener(v -> pickVideoLauncher.launch("video/*"));
 
+        nextButton.setOnClickListener(v -> playNext());
+        prevButton.setOnClickListener(v -> playPrevious());
+        fullscreenButton.setOnClickListener(v -> toggleFullscreen());
+
+        volumeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    player.setVolume(progress / 100f);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) { }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) { }
+        });
+
+        player.addListener(new com.google.android.exoplayer2.Player.Listener() {
+            @Override
+            public void onPlaybackStateChanged(int state) {
+                if (state == com.google.android.exoplayer2.Player.STATE_ENDED) {
+                    playNext();
+                }
+            }
+        });
+
         // Load a remote sample video on startup. Replace the URL with your own if desired.
-        Uri videoUri = Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
-        playVideo(videoUri);
+        playVideo(playlist[playlistIndex]);
     }
 
     private void playVideo(Uri uri) {
-        MediaItem mediaItem = MediaItem.fromUri(uri);
+        MediaItem.SubtitleConfiguration subtitle = new MediaItem.SubtitleConfiguration.Builder(
+                Uri.parse("asset:///sample.srt"))
+                .setMimeType(com.google.android.exoplayer2.util.MimeTypes.APPLICATION_SUBRIP)
+                .setLanguage("en")
+                .build();
+        MediaItem mediaItem = new MediaItem.Builder()
+                .setUri(uri)
+                .setSubtitleConfigurations(java.util.Collections.singletonList(subtitle))
+                .build();
         player.setMediaItem(mediaItem);
         player.prepare();
         player.play();
+    }
+
+    private void playNext() {
+        if (playlistIndex < playlist.length - 1) {
+            playlistIndex++;
+            playVideo(playlist[playlistIndex]);
+        }
+    }
+
+    private void playPrevious() {
+        if (playlistIndex > 0) {
+            playlistIndex--;
+            playVideo(playlist[playlistIndex]);
+        }
+    }
+
+    private void toggleFullscreen() {
+        View decor = getWindow().getDecorView();
+        if (isFullScreen) {
+            decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        } else {
+            decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+        isFullScreen = !isFullScreen;
     }
 
     @Override
@@ -121,6 +201,36 @@ public class MainActivity extends AppCompatActivity {
         }
         if (progressHandler != null) {
             progressHandler.removeCallbacksAndMessages(null);
+        }
+    }
+
+    @Override
+    public void onUserLeaveHint() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PictureInPictureParams params = new PictureInPictureParams.Builder()
+                    .setAspectRatio(new Rational(16, 9))
+                    .build();
+            enterPictureInPictureMode(params);
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPipMode, Configuration newConfig) {
+        super.onPictureInPictureModeChanged(isInPipMode, newConfig);
+        if (isInPipMode) {
+            findViewById(R.id.pick_button).setVisibility(View.GONE);
+            findViewById(R.id.speed_spinner).setVisibility(View.GONE);
+            findViewById(R.id.volume_bar).setVisibility(View.GONE);
+            findViewById(R.id.fullscreen_button).setVisibility(View.GONE);
+            findViewById(R.id.next_button).setVisibility(View.GONE);
+            findViewById(R.id.prev_button).setVisibility(View.GONE);
+        } else {
+            findViewById(R.id.pick_button).setVisibility(View.VISIBLE);
+            findViewById(R.id.speed_spinner).setVisibility(View.VISIBLE);
+            findViewById(R.id.volume_bar).setVisibility(View.VISIBLE);
+            findViewById(R.id.fullscreen_button).setVisibility(View.VISIBLE);
+            findViewById(R.id.next_button).setVisibility(View.VISIBLE);
+            findViewById(R.id.prev_button).setVisibility(View.VISIBLE);
         }
     }
 }

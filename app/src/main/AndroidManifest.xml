@@ -9,12 +9,15 @@
         android:theme="@style/Theme.VideoPlayerApp">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:supportsPictureInPicture="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
+
+    <uses-feature android:name="android.software.picture_in_picture" android:required="false" />
 
 </manifest>
