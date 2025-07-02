@@ -5,6 +5,9 @@
     <string name="prev">Prev</string>
     <string name="next">Next</string>
     <string name="fullscreen">Fullscreen</string>
+    <string name="share">Share</string>
+    <string name="orientation">Rotate</string>
+    <string name="brightness">Brightness</string>
     <string-array name="playback_speed_labels">
         <item>0.5x</item>
         <item>1x</item>

@@ -1,6 +1,8 @@
 package com.example.videoplayer;
 
 import android.app.PictureInPictureParams;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
@@ -8,22 +10,26 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Rational;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.material.navigation.NavigationView;
 
 public class MainActivity extends AppCompatActivity {
     private ExoPlayer player;
@@ -37,14 +43,26 @@ public class MainActivity extends AppCompatActivity {
     };
     private int playlistIndex = 0;
     private boolean isFullScreen = false;
+    private boolean landscapeLocked = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        NavigationView drawerView = findViewById(R.id.drawer_view);
+        populateDrawer(drawerView);
+        toolbar.setNavigationIcon(android.R.drawable.ic_menu_sort_by_size);
+        toolbar.setNavigationOnClickListener(v -> drawerLayout.openDrawer(android.view.Gravity.START));
+
         PlayerView playerView = findViewById(R.id.player_view);
         SeekBar progressBar = findViewById(R.id.progress_bar);
         SeekBar volumeBar = findViewById(R.id.volume_bar);
+        SeekBar brightnessBar = findViewById(R.id.brightness_bar);
         Spinner speedSpinner = findViewById(R.id.speed_spinner);
         Button pickButton = findViewById(R.id.pick_button);
         Button nextButton = findViewById(R.id.next_button);
@@ -106,6 +124,23 @@ public class MainActivity extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar seekBar) { }
         });
 
+        brightnessBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    WindowManager.LayoutParams params = getWindow().getAttributes();
+                    params.screenBrightness = progress / 100f;
+                    getWindow().setAttributes(params);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) { }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) { }
+        });
+
         pickVideoLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
@@ -114,6 +149,7 @@ public class MainActivity extends AppCompatActivity {
                         playlist = java.util.Arrays.copyOf(playlist, playlist.length + 1);
                         playlist[playlistIndex] = uri;
                         playVideo(uri);
+                        populateDrawer(drawerView);
                     }
                 });
 
@@ -147,8 +183,52 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Load a remote sample video on startup. Replace the URL with your own if desired.
+        toolbar.setOnMenuItemClickListener(item -> onOptionsItemSelected(item));
+
         playVideo(playlist[playlistIndex]);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_share) {
+            shareCurrent();
+            return true;
+        } else if (item.getItemId() == R.id.action_orientation) {
+            toggleOrientation();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void shareCurrent() {
+        Uri uri = playlist[playlistIndex];
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("text/plain");
+        share.putExtra(Intent.EXTRA_TEXT, uri.toString());
+        startActivity(Intent.createChooser(share, getString(R.string.share)));
+    }
+
+    private void toggleOrientation() {
+        landscapeLocked = !landscapeLocked;
+        if (landscapeLocked) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+    }
+
+    private void populateDrawer(NavigationView drawerView) {
+        drawerView.getMenu().clear();
+        for (int i = 0; i < playlist.length; i++) {
+            Uri uri = playlist[i];
+            drawerView.getMenu().add(0, i, 0, uri.getLastPathSegment()).setOnMenuItemClickListener(item -> {
+                playlistIndex = item.getItemId();
+                playVideo(playlist[playlistIndex]);
+                DrawerLayout layout = findViewById(R.id.drawer_layout);
+                layout.closeDrawer(android.view.Gravity.START);
+                return true;
+            });
+        }
     }
 
     private void playVideo(Uri uri) {
@@ -224,6 +304,7 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.fullscreen_button).setVisibility(View.GONE);
             findViewById(R.id.next_button).setVisibility(View.GONE);
             findViewById(R.id.prev_button).setVisibility(View.GONE);
+            findViewById(R.id.brightness_bar).setVisibility(View.GONE);
         } else {
             findViewById(R.id.pick_button).setVisibility(View.VISIBLE);
             findViewById(R.id.speed_spinner).setVisibility(View.VISIBLE);
@@ -231,6 +312,7 @@ public class MainActivity extends AppCompatActivity {
             findViewById(R.id.fullscreen_button).setVisibility(View.VISIBLE);
             findViewById(R.id.next_button).setVisibility(View.VISIBLE);
             findViewById(R.id.prev_button).setVisibility(View.VISIBLE);
+            findViewById(R.id.brightness_bar).setVisibility(View.VISIBLE);
         }
     }
 }

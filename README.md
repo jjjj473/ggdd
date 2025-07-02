@@ -20,9 +20,10 @@ version. You can also build directly with your system Gradle via
 
 The app streams a sample video from the web by default. You can tap the "Pick
 Video" button to choose a local file using Android's media picker. Videos you
-select are added to a simple playlist so you can move forward or backward using
-the Next and Prev buttons. A progress bar shows playback, a volume slider lets
-you adjust sound, and the spinner below the player changes playback speed.
-Use the Fullscreen button for immersive viewing. When you press the home
-button, the player enters picture-in-picture mode so video continues in a small
-window. Sample subtitles are bundled in `assets/sample.srt`.
+select are added to a playlist that you can open from the navigation drawer.
+Use the Next and Prev buttons to skip tracks. A progress bar shows playback,
+and there are sliders for volume and brightness control. The spinner below the
+player changes playback speed. Use the Fullscreen button for immersive viewing
+and lock orientation or share the current video from the toolbar menu. When you
+press the home button, the player enters picture-in-picture mode so video
+continues in a small window. Sample subtitles are bundled in `assets/sample.srt`.
