@@ -15,4 +15,6 @@ internet connection is required when invoking the command for the first time.
 The wrapper JAR is intentionally not included in the repository to avoid
 storing binaries. The `gradlew` script will download it automatically.
 
-The app streams a sample video from the web by default. Edit `MainActivity` if you want to supply your own video URL.
+The app streams a sample video from the web by default. You can also tap the
+"Pick Video" button to choose a local video using Android's media picker.
+Edit `MainActivity` if you want to supply your own default URL.
