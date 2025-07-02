@@ -6,3 +6,5 @@ build
 app/build
 app/src/main/res/raw/*.mp4
 gradle/wrapper/gradle-wrapper.jar
+gradlew
+gradlew.bat

@@ -4,16 +4,19 @@ This project contains a simple Android application written in Java that plays a 
 
 ## Building
 
-You need Android Studio or the Android command line tools. Run:
+You need Android Studio or a local Gradle installation. Run the following to
+generate the wrapper scripts and then build the debug APK:
 
 ```bash
+gradle wrapper
 ./gradlew assembleDebug
 ```
 
-The Gradle wrapper will download the build system on first run, so an
-internet connection is required when invoking the command for the first time.
 The wrapper JAR is intentionally not included in the repository to avoid
-storing binaries. The `gradlew` script will download it automatically.
+committing binaries. Running `gradle wrapper` creates `gradlew` along with the
+required JAR so the build can be reproduced without a pre-installed Gradle
+version. You can also build directly with your system Gradle via
+`gradle assembleDebug`.
 
 The app streams a sample video from the web by default. You can also tap the
 "Pick Video" button to choose a local video using Android's media picker.
